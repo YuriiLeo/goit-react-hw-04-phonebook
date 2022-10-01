@@ -1,5 +1,5 @@
 import { Container } from "./App.styled";
-import React, { Component } from 'react';
+import  { useState, useEffect } from 'react';
 import ContactForm from 'components/ContactForm/ContactForm';
 import ContactList from 'components/ContactList/ContactList';
 import Filter from 'components/Filter/Filter';
@@ -8,101 +8,83 @@ import { nanoid } from 'nanoid';
 // import Notification from "components/Notification/Notification";
 import Contacts from "components/Contacts/Contacts"; 
 
-export default class App extends Component {
+export default function App() {
 
-    state = {
-        contacts: [],
-        filter: '',
-    }
+    const [contacts, setContacts] = useState(() => {
+        return JSON.parse(window.localStorage.getItem('contacts'))
+            ?? []
+    });
+    const [filter, setFilter] = useState("");
 
-    componentDidMount() {
-        const contacts = localStorage.getItem('contacts');
-        const parsedContacts = JSON.parse(contacts);
 
-        if (parsedContacts) {
-           this.setState({ contacts: parsedContacts }); 
-        }
-    }
-
-    componentDidUpdate(_, prevState) {
-        if (this.state.contacts.length !== prevState.contacts.length ) {
-            localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-        }
-        }
-
-    
-    addContact = (contact) => {
-        if (this.inDuplicate(contact)) {
+    useEffect(() => {
+        window.localStorage.setItem('contacts', JSON.stringify(contacts));
+    }, [contacts])
+        
+    const addContact = (contact) => {
+        if (inDuplicate(contact)) {
              return  alert(`${contact.name}  is already in contacts.`);
         }
-           const newContact = {
+         const newContact = {
         id: nanoid(),
         ...contact
-    }
-        this.setState((prev) => {
-            return {
-                contacts: [...prev.contacts, newContact]
-            }
-        }) 
+        }
+        setContacts((prev) => ([...prev, newContact]))
     }
 
-    removeContact = ( id) => {
-        this.setState((prev ) => {
-            const newContacts = prev.contacts.filter((item) => item.id !== id);
-            return {
-                contacts: newContacts
-            }
-        })
-    }
-
-    handleChange = (evt) => {
-        const { name, value } = evt.target;
-        this.setState({
-            [name]: value
-        })
-    }
-
-    inDuplicate({ name }) {
-        const { contacts } = this.state;
-        const result = contacts.find((item) => item.name === name);
-        // const result = contacts.find((item) => item.name === name || item.number === number);
+  const handleChange = (evt) => {
+      const { value } = evt.target;
+      setFilter(value)
+  }
+  
+    const inDuplicate = ({ name, number }) => {
+        const result = contacts.find((item) => item.name === name && item.number === number);
         return result;
     }
 
-    getFilterContacts() {
-        const { contacts, filter } = this.state;
+    const getFilterContacts = () => {
         if (!filter) {
             return contacts;  
-        }
-
+        }  
         const normalizedFilter = filter.toLocaleLowerCase();
-        const filterContacts = contacts.filter(({ name, number }) => {
+        const filterContacts = contacts.filter(({name, number}) => {
             const normalizedName = name.toLocaleLowerCase();
             const normalizedNumber = number.toLocaleLowerCase();
             const result = normalizedName.includes(normalizedFilter) || normalizedNumber.includes(normalizedFilter);
             return result;
         }) 
+       
         return filterContacts;
     }
 
-    render() {
-        const { addContact, removeContact,  handleChange } = this;
-        const { filter } = this.state;
-        const contacts = this.getFilterContacts();
+    const contactsFilter = getFilterContacts(contacts);
 
-        return (
-            <Container>
-                <Section title="Phonebook">
-                  <ContactForm  onSubmit={addContact}/>
-            </Section>
-            <Contacts>
-              {/* {contacts.length === 0 ?
-                <Notification message="There is no contacts"></Notification> : } */}
-                <Section title="Contacts">
-                  <Filter onChange={handleChange} filter={filter} />
-                  <ContactList items={contacts} removeContact={removeContact} />
-                </Section>
-            </Contacts>
-            </Container>
-  )}
+
+     const removeContact = (id) => {
+        setContacts((prev) => {
+            const newContacts = prev.filter((item) => item.id !== id);
+            return newContacts
+        })
+         if (contactsFilter.length === 1) {
+            console.log("Hi");
+            setFilter("");
+        }
+         
+    }
+
+  return (
+      <Container>
+          <Section title="Phonebook">
+            <ContactForm  onSubmit={addContact}/>
+      </Section>
+      <Contacts>
+        {/* {contacts.length === 0 ?
+         <Notification message="There is no contacts"></Notification> : } */}
+          <Section title="Contacts">
+           <Filter onChange={handleChange} filter={filter} />
+            <ContactList items={contactsFilter} removeContact={removeContact} />
+          </Section>
+      </Contacts>
+      </Container>
+  )
 }

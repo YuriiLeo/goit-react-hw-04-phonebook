@@ -1,16 +1,12 @@
-import React, { Component } from 'react'
+import React from 'react';
 import { nanoid } from 'nanoid';
 import PropTypes from 'prop-types';
 import { Input } from './Filter.styled';
 
-export default class Filter extends Component {
+export default function Filter({ onChange, filter }) {
 
-    filterId = nanoid();
-
-    render() {
-        const { filterId, } = this;
-        const { onChange, filter } = this.props;
-    return (
+  const filterId = nanoid();
+  return (
       <div>
           <label htmlFor={filterId}>Find contacts by name</label>
             <Input
@@ -21,7 +17,6 @@ export default class Filter extends Component {
                 value={filter} />
      </div>
     )
-  }
 }
 
 
